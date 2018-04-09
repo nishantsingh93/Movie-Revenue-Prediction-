@@ -8,6 +8,7 @@ This Project aims at predicting revenue of movies using supervised learning appr
 
 
 **Objective:** 
+Given the information  about a movie such as release month, cast, budget, film review, director, production house, language can we predict the total gross revenue for that movie?
 
 
 
