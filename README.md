@@ -65,6 +65,7 @@ Given the information  about a movie such as release month, cast, budget, film r
 
 #### Linear Regression:
 ![scatterplotmatrix](https://user-images.githubusercontent.com/25557540/38492900-35d069d4-3ba5-11e8-90ee-295020f6e292.png)
+![correlation plot](https://user-images.githubusercontent.com/25557540/38493373-cff5fa64-3ba6-11e8-8d71-fbd051af52e8.png)
 
 
 **Result:**
