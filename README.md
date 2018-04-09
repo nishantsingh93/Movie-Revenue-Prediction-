@@ -119,5 +119,11 @@ Given the information  about a movie such as release month, cast, budget, film r
 ******************************************************************************************************************************
 ### VI. References:
 
+* https://www.themoviedb.org/
+* https://drsimonj.svbtle.com/ridge-regression-with-glmnet
+* https://www.r-bloggers.com/ridge-regression-and-the-lasso/
+* https://www.r-bloggers.com/random-forests-in-r/
+
+
 ******************************************************************************************************************************
 ******************************************************************************************************************************
