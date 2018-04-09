@@ -51,7 +51,7 @@ Given the information  about a movie such as release month, cast, budget, film r
 
 **Lasso Regression:**
 
-**Ridge Regression: **
+**Ridge Regression:**
 
 **Random Forest:**
 
