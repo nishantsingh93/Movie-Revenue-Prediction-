@@ -69,6 +69,7 @@ Given the information  about a movie such as release month, cast, budget, film r
 
 
 **Result:**
+
 **Diagnostic plots:**
 
 ![diagnostic plots](https://user-images.githubusercontent.com/25557540/38492936-52257fe8-3ba5-11e8-902f-3aefbbcd2e51.png)
