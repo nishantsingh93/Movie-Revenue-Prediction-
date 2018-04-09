@@ -77,18 +77,29 @@ Given the information  about a movie such as release month, cast, budget, film r
 * After Splitting dataset to find test R-squared for linear model we get efficiency of 75%
 
 #### Lasso Regression:
+
 **Result:**
 ![ridge regression](https://user-images.githubusercontent.com/25557540/38493214-3fddddb6-3ba6-11e8-827d-cead0be5d5be.png)
 ![cross validationrr](https://user-images.githubusercontent.com/25557540/38493242-52799564-3ba6-11e8-9ca9-8e6e39b5eb9f.png)
 
 
 #### Ridge Regression:
+
 **Result:**
 ![lasso regression](https://user-images.githubusercontent.com/25557540/38493218-43a9f13c-3ba6-11e8-8326-0cdbfefccf29.png)
 ![lasso regressionrr](https://user-images.githubusercontent.com/25557540/38493248-57a91f14-3ba6-11e8-9cf6-38cba3dc2fda.png)
-#### Random Forest:
+
+#### Regression Trees:
+
 **Result:**
 ![rt](https://user-images.githubusercontent.com/25557540/38493273-732e9d72-3ba6-11e8-958a-14761ac09a5e.png)
+![rt1](https://user-images.githubusercontent.com/25557540/38493431-094821f2-3ba7-11e8-8013-bdcd6bacf2ca.png)
+
+#### Random Forest:
+
+**Result:**
+![rf](https://user-images.githubusercontent.com/25557540/38493423-04dbe270-3ba7-11e8-8226-ea3d74a2c980.png)
+
 
 ******************************************************************************************************************************
 ******************************************************************************************************************************
