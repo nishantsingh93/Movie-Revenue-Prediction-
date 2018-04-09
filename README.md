@@ -4,6 +4,7 @@
 ### I. Introduction:
 
 **Dataset:** 
+This Project aims at predicting revenue of movies using supervised learning approach. The [TMDB](https://www.kaggle.com/tmdb/tmdb-movie-metadata/data) dataset contains around 5000 movies and TV series. It is one of the biggest movie database on the web available. The dataset is divided into csv files and many columns are in json format.
 
 
 **Objective:** 
