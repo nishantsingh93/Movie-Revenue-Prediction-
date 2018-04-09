@@ -49,10 +49,14 @@ Given the information  about a movie such as release month, cast, budget, film r
 * Combining the keywords,genres, production_companies, production countries & spoken languages of a movie in a single column.
 * Dropping existing unformatted columns in the main dataset, creating a new dataset "movies"
 * Adding new columns gross and gross_flag for the purpose of exploratory analysis 
-* Drop useless columns('homepage','overview','status','title','tagline','original_title', 'original_language', 'spoken_languages')
+* Drop useless columns( 'homepage','overview','status','title','tagline','original_title', 'original_language', 'spoken_languages', 'production_countries' )
 * Extracting month of release date; put into new column
 * From Linear Regression using each of 12 months as dummy categories, we saw that months 5, 6, 11 and 12 are important, while the rest are unimportant. We will aggregate this as 'holiday month' (beginning of Summer; beginning of Winter)
 * Select Unique Countries & making dummy variables on top 6 frequent countries on the list.
+* Converting genre into dummy columns
+* Spliting JSON for cast, crew to select director, actors & actoress
+* Downloading List of top 100 directors, actors and converting the directors, actors into dummy varible based on the condition that if director/actor of the film  in the top 100 list then assign 1 else 0
+* Assigning Dummy variable for Gender
 
 ******************************************************************************************************************************
 ******************************************************************************************************************************
