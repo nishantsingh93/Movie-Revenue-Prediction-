@@ -63,14 +63,34 @@ Given the information  about a movie such as release month, cast, budget, film r
 ******************************************************************************************************************************
 ### III. Training Machine Learning Algorithms:
 
-**Linear Regression:**
+#### Linear Regression:
+![scatterplotmatrix](https://user-images.githubusercontent.com/25557540/38492900-35d069d4-3ba5-11e8-90ee-295020f6e292.png)
 
-**Lasso Regression:**
+![scatterplotmatrix](https://user-images.githubusercontent.com/25557540/38492920-47947ebc-3ba5-11e8-874f-16a72257e523.png)
 
-**Ridge Regression:**
+**Result:**
+**Diagnostic plots:**
+![diagnostic plots](https://user-images.githubusercontent.com/25557540/38492936-52257fe8-3ba5-11e8-902f-3aefbbcd2e51.png)
 
-**Random Forest:**
+![residualsvsbudget](https://user-images.githubusercontent.com/25557540/38493012-8f77ac04-3ba5-11e8-9af0-8d88366c5e99.png)
+![residualsvspopularity](https://user-images.githubusercontent.com/25557540/38493013-8f946948-3ba5-11e8-9daf-caf65a69ef40.png)
+![residualsvsvote_count](https://user-images.githubusercontent.com/25557540/38493015-8fb1a026-3ba5-11e8-8a41-db50dfc7990e.png)
 
+* After Splitting dataset to find test R-squared for linear model we get efficiency of 75%
+
+#### Lasso Regression:
+**Result:**
+![ridge regression](https://user-images.githubusercontent.com/25557540/38493214-3fddddb6-3ba6-11e8-827d-cead0be5d5be.png)
+![cross validationrr](https://user-images.githubusercontent.com/25557540/38493242-52799564-3ba6-11e8-9ca9-8e6e39b5eb9f.png)
+
+
+#### Ridge Regression:
+**Result:**
+![lasso regression](https://user-images.githubusercontent.com/25557540/38493218-43a9f13c-3ba6-11e8-8326-0cdbfefccf29.png)
+![lasso regressionrr](https://user-images.githubusercontent.com/25557540/38493248-57a91f14-3ba6-11e8-9cf6-38cba3dc2fda.png)
+#### Random Forest:
+**Result:**
+![rt](https://user-images.githubusercontent.com/25557540/38493273-732e9d72-3ba6-11e8-958a-14761ac09a5e.png)
 
 ******************************************************************************************************************************
 ******************************************************************************************************************************
