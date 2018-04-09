@@ -43,6 +43,17 @@ Given the information  about a movie such as release month, cast, budget, film r
 * crew(String)
 
 
+**Dataset Cleaning:**
+
+* So I have first tried creating different dataframes for extracting data from the json object. I use jsonlite library to extract the data. 
+* Combining the keywords,genres, production_companies, production countries & spoken languages of a movie in a single column.
+* Dropping existing unformatted columns in the main dataset, creating a new dataset "movies"
+* Adding new columns gross and gross_flag for the purpose of exploratory analysis 
+* Drop useless columns('homepage','overview','status','title','tagline','original_title', 'original_language', 'spoken_languages')
+* Extracting month of release date; put into new column
+* From Linear Regression using each of 12 months as dummy categories, we saw that months 5, 6, 11 and 12 are important, while the rest are unimportant. We will aggregate this as 'holiday month' (beginning of Summer; beginning of Winter)
+* Select Unique Countries & making dummy variables on top 6 frequent countries on the list.
+
 ******************************************************************************************************************************
 ******************************************************************************************************************************
 ### III. Training Machine Learning Algorithms:
