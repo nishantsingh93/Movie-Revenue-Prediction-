@@ -1,0 +1,1099 @@
+---
+title: "TMDB Movie Data Exploration"
+output: html_notebook
+---
+
+## Introduction
+
+The goal of the project is to derive insights on the TMDB movie datset and perform regression models to predict revenue of the movie. This model could be leveraged by production companies for making go/no-go screening decisions.
+
+TMDB Movie Dataset available on Kaggle. Link: https://www.kaggle.com/tmdb/tmdb-movie-metadata
+
+##### Load Packages
+
+```{r}
+library(plyr) #data manipulation
+library(tidyverse)# data manipulation
+library(formattable)# table
+library(splitstackshape) # split columns
+library(jsonlite) #JSON format 
+library(wordcloud) #wordcloud
+library(RColorBrewer) # Color Theme
+library(ggthemes) #Themes for plot
+library(tm) # Sentiment Analysis 
+library(RSentiment) # Sentiment Analysis
+library(zoo) # Time 
+library(stringr) #String Manipulation
+library(ggplot2)
+library(VIM)
+library(mice)
+library(vcd)
+require(car)
+library(tabplot)
+library(PerformanceAnalytics)
+library(MASS)
+library(glmnet)
+library(dplyr)
+```
+
+##### Load TMDB datset
+
+```{r}
+movie=read_csv("tmdb_5000_movies.csv",col_names=TRUE,na="NA")
+credit=read_csv("tmdb_5000_credits.csv",col_names=TRUE,na="NA")
+```
+
+The Movie and credit data contain columns of nested JSON which need to be split into separate columns for accurate analysis. In the movie dataset, popularity means the number of views of the movie in the website and vote_average tells us about the movie rating.
+
+
+```{r}
+glimpse(movie)
+```
+
+
+
+```{r}
+glimpse(credit)
+```
+
+##1. Data Exploratory Analysis
+
+```{r}
+genredf=movie %>% filter(nchar(genres)>2) %>% mutate(js=lapply(genres,fromJSON)) %>% unnest(js) %>% dplyr::select(id,title,genre=name) #Convert JSON format into data frame
+slice(genredf)
+```
+
+#####1.1. Wordcloud: Genre Representation
+
+  
+```{r}
+#A look at the genre variety in our dataset
+df <- as.data.frame(table(genredf$genre))
+df2 <- with(df,df[order(Freq,decreasing = TRUE),])
+
+#wordcloud
+wordcloud(words=df2$Var1,freq=df2$Freq,min.freq=100,max.words = 20,random.order=FALSE,random.color=TRUE,rot.per=0.35,colors = brewer.pal(20,"Dark2"),scale=c(5,.2))
+```
+
+
+#####1.2. Wordcloud: Production Companies
+
+```{r}
+production=movie %>% filter(nchar(production_companies)>2) %>% mutate(js=lapply(production_companies,fromJSON)) %>% unnest(js) %>% dplyr::select(budget,revenue,company=name)
+lapply(production,class)
+```
+
+
+```{r}
+df <- as.data.frame(table(production$company))
+df2 <- with(df,df[order(Freq,decreasing = TRUE),])
+df2
+
+wordcloud(words=df2$Var1,freq=df2$Freq,min.freq=50,max.words = 25,color =rainbow(7),scale=c(3,0.5))
+```
+
+######1.3. Which year has seen maximum release of movies ?
+
+```{r}
+movie$Year=as.factor(format(movie$release_date,"%Y"))
+movie$Date=as.factor(format(movie$release_date,"%d"))
+movie$month=month.abb[(as.factor(format(movie$release_date,"%m")))]
+
+df <- as.data.frame(table(movie$month))
+df2 <- with(df,df[order(Freq,decreasing = TRUE),])
+df2
+
+df2 %>%
+ggplot(aes(reorder(Var1,Freq),Freq,fill=Var1))+geom_bar(stat="identity")+theme(plot.title=element_text(size=14,face="italic",colour="red"),axis.text.x = element_text(angle=90),legend.position="none")+labs(x="",y="Total number of movies released",title="Number of Movies Releases per month")+coord_flip()+geom_label(aes(label=Freq))
+```
+
+#####1.4. Does high budget movie necessarily mean high popularity among viewers?
+
+```{r}
+db=movie %>% left_join(credit,by=c("id"="movie_id"))
+db_credit=db %>% filter(nchar(cast)>2) %>% mutate(js=lapply(cast,fromJSON)) %>% unnest(js)
+```
+
+
+```{r}
+get_cor <- function(df){
+    m <- cor(df$x,df$y, use="pairwise.complete.obs");
+    eq <- substitute(expr=r==cor,env=list(cor=format(m, digits = 4)))
+    return(as.character(as.expression(eq) ))                
+}
+
+temp=db_credit %>%  dplyr::select(budget,popularity) %>% distinct() 
+ggplot(temp,aes(budget,popularity))+stat_bin_hex(bins=15)+scale_fill_distiller(palette="Spectral")+stat_smooth(method="lm",color="orchid",size=2)+scale_x_continuous(labels=scales::comma)
+```
+
+```{r}
+temp=db_credit %>%  dplyr::select(budget,vote_count) %>% distinct() 
+ggplot(temp,aes(budget,vote_count))+stat_bin_hex(bins=15)+scale_fill_distiller(palette="Spectral")+stat_smooth(method="lm",color="orchid",size=2)+scale_x_continuous(labels=scales::comma)
+```
+```{r}
+temp=db_credit %>%  dplyr::select(budget,revenue) %>% distinct() 
+ggplot(temp,aes(budget,revenue))+stat_bin_hex(bins=15)+scale_fill_distiller(palette="Spectral")+stat_smooth(method="lm",color="orchid",size=2)+scale_x_continuous(labels=scales::comma)
+```
+From the above plots we could realise that even when production companies spend lot of money on the movie it will not yield the revenue unless important features like story and direction make an impact to the audience.
+
+#####1.5. Comparing Revenue with vote_count, popularity and runtime
+
+```{r}
+ggplot(db_credit, aes(x =runtime, y =revenue))+
+  geom_point(size=1, aes(colour=vote_count)) +
+  labs(title = "Runtime Vs. Revenue and vote count", 
+       x = "Runtime", y = "Revenue")
+```
+
+```{r}
+ggplot(db_credit, aes(x =popularity, y =revenue))+
+  geom_point(size=1, aes(colour=vote_count)) +
+  labs(title = "Popularity Vs. Revenue and vote count", 
+       x = "popularity", y = "Revenue")
+```
+
+
+```{r}
+ggplot(aes(x = log(revenue), y = log(budget)), data = db_credit) +
+  geom_point(alpha = 0.1, position = position_jitter(h = 0)) +
+  geom_smooth(method = 'lm', color = 'red') +
+  ylab('Budget') +
+  xlab('Revenue') +
+  ggtitle('Budget Vs Revenue')
+```
+
+```{r}
+ggplot(aes(x = log(revenue), y = vote_average), data = db_credit) +
+  geom_point(alpha = 0.1, position = position_jitter(h = 0)) +
+  geom_smooth(method = 'lm', color = 'red') +
+  ylab('TMDB score') +
+  xlab('Revenue') +
+  ggtitle('TMDB score vs Revenue')
+```
+
+
+```{r}
+ggplot(aes(x = log(budget), y = vote_average), data = db_credit) +
+  geom_point(alpha = 0.1, position = position_jitter(h = 0)) +
+  geom_smooth(method = 'lm', color = 'red') +
+  ylab('TMDB score') +
+  xlab('Budget') +
+  ggtitle('TMDB score vs Budget')
+```
+
+#####1.6. Average Movie Rating
+
+```{r}
+ggplot(db_credit,aes(vote_average)) +
+  geom_histogram(bins = 100) +
+  geom_vline(xintercept = mean(tmdb$vote_average,na.rm = TRUE),colour = "red") + 
+  ylab("Count of Movies") + 
+  xlab("Average Vote") + 
+  ggtitle("Histogram for average vote rating")
+```
+
+Mean : 6.092083
+
+Let us look at the top 20 movies with highest average_vote with color according to vote count.
+
+Here, movies with vote count > 500 are considered as movies with less vote counts and high rating can be a misleading statistic.
+
+```{r}
+head(db_credit)
+```
+
+#####1.7. Trasformation of JSON column to unique columns to the movie dataset
+
+```{r}
+## transformation of "keywords" column into tibble
+keywords <- movie %>%    
+  filter(nchar(keywords) > 2) %>%                 # fiter out blank keywords field
+  mutate(                                         # create a new field 
+    js = lapply(keywords, fromJSON)               # containing a LIST of keyword and value pairs
+  ) %>%                                           # called id and name
+  unnest(js) %>%                                  # turn each keyword/value pairs in the LIST into a row
+  dplyr::select(id, title, keywords = name)
+## Combining the keywords of a movie in a single column
+keywords <- aggregate(keywords ~.,data = keywords, paste, collapse = ",")
+#Combining the genres of a movie in a single column
+genres <- movie %>% filter(nchar(genres) > 2) %>%                   
+  mutate( js = lapply(genres, fromJSON)) %>%                                           
+  unnest(js) %>%                                  
+  dplyr::select(id, title, genres = name) 
+genres <- aggregate(genres ~.,data = genres, paste, collapse = ",")
+# Combining production_companies
+production_companies <- movie %>% filter(nchar(production_companies) > 2) %>%                   
+  mutate( js = lapply(production_companies, fromJSON)) %>%                                           
+  unnest(js) %>%                                  
+  dplyr::select(id, title, production_companies = name) 
+production_companies <- aggregate(production_companies ~.,data = production_companies, paste, collapse = ",")
+# Combining production countries
+production_countries <- movie %>%    
+  filter(nchar(production_countries) > 2) %>%     
+  mutate(                                         
+    js = lapply(production_countries, fromJSON)   
+  ) %>%                                          
+  unnest(js) %>%                                  
+  dplyr::select(id, title, production_countries = name)
+countries <- movie %>%    
+  filter(nchar(production_countries) > 2) %>%     
+  mutate(                                         
+    js = lapply(production_countries, fromJSON)   
+  ) %>%                                          
+  unnest(js) %>%                                  
+  dplyr::select(id, title, production_countries = name)
+production_countries <- aggregate(production_countries ~.,data = production_countries, paste, collapse = ",")
+# combining spoken languages
+spoken_languages <- movie %>%    
+  filter(nchar(spoken_languages) > 2) %>%        
+  mutate(                                         
+    js = lapply(spoken_languages, fromJSON)      
+  ) %>%                                          
+  unnest(js) %>%                                 
+  dplyr::select(id, title, spoken_languages = iso_639_1) 
+spoken_languages <- aggregate(spoken_languages ~.,data = spoken_languages, paste, collapse = ",")
+```
+
+```{r}
+movies <- subset(movie, select = -c(genres, keywords, production_companies, production_countries,spoken_languages))
+glimpse(movies)
+```
+
+```{r}
+# Dropped existing unformatted columns in the main dataset, creating a new dataset "movies"
+movies <- subset(movie, select = -c(genres, keywords, production_companies, production_countries, spoken_languages))
+movies <- movies %>%
+  full_join(keywords, by = c("id", "title")) %>%
+  full_join(genres, by = c("id", "title")) %>%
+  full_join(production_companies, by = c("id", "title")) %>%
+  full_join(production_countries, by = c("id", "title")) %>%
+  full_join(spoken_languages, by = c("id", "title"))
+glimpse(movies)
+```
+
+#####1.8. Movie Rating Vs Budget
+
+```{r}
+movies %>% dplyr::select(title,vote_average,vote_count, budget) %>% 
+  filter(vote_count > 500 ) %>% arrange(desc(vote_average)) %>% head(20) %>%
+  ggplot(aes(x = title,y = vote_average,fill = budget )) + geom_bar(stat = "identity") + coord_flip(ylim = c(7, 9)) +
+  scale_fill_continuous()
+```
+
+#####1.9. Popularity vs Budget are not highly correlated 
+
+```{r}
+#Top 20 movies by popularity, color according to vote count :
+movies %>% dplyr::select(title,vote_average,vote_count, popularity) %>% 
+  filter(vote_count > 300 ) %>%  head(30) %>%
+  ggplot(aes(x = title,y = popularity, fill = vote_count)) + geom_bar(stat = "identity") + coord_flip() +
+  scale_fill_continuous()
+```
+
+#####1.10. Analysing Movie Genre
+
+```{r}
+genre1 <- Corpus(VectorSource(genres$genres))
+dtm <- DocumentTermMatrix(genre1)
+genre_freq <- colSums(as.matrix(dtm))
+freq <- sort(colSums(as.matrix(dtm)), decreasing = TRUE) 
+genre_wframe <- data.frame(word = names(genre_freq), freq = genre_freq)
+ggplot(genre_wframe, aes(x = reorder(word,-freq), y = freq)) +  
+  geom_bar(stat = "identity") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ggtitle("Movie Genre frequency graph") + 
+  xlab("Genre") + 
+  ylab("Frequency")
+```
+
+#####1.11. Compare Profit with the movie rating and budget
+
+```{r}
+#Adding new columns gross and gross_flag 
+movies <- movies %>%
+  mutate(gross = revenue - budget, gross_flag = ifelse(gross < 0, "Loss", "Profit"))
+
+library(plotly)
+plot_ly(movies, x = ~vote_average, y = ~budget, z = ~gross/1000000, 
+        color = ~gross_flag, colors = c('#BF382A', '#0C4B8E') ,size = I(3)) %>%
+  add_markers() %>%
+  layout(scene = list(xaxis = list(title = 'Average vote'),
+                      yaxis = list(title = 'Budget'),
+                      zaxis = list(title = 'Gross (million $)')),
+         title = "INTERACTIVE 3D Scatter plot: Average vote vs Budget vs Gross",
+         showlegend = FALSE)
+```
+
+The blue dots represents the movie with movies making profits, we can hover over the plot to undersatnd the behaviour of the variables vote_average anf budget with respect to Gross.
+
+##2. Data Cleaning
+
+```{r}
+movies <- read.csv("tmdb_5000_movies.csv", header = TRUE, stringsAsFactors = FALSE)
+credits <- read.csv("tmdb_5000_credits.csv",header = TRUE, stringsAsFactors = FALSE )
+```
+
+```{r}
+
+library(tidyverse)
+library(jsonlite)
+```
+
+```{r}
+#movies <- tmdb_5000_movies
+#credits <- tmdb_5000_credits
+
+Top.100.Directors.Working.Today <- read.csv("Top 100 Directors Working Today.csv", header = TRUE, stringsAsFactors = FALSE)
+The.Top.100.Actors.of.2016 <- read.csv("The Top 100 Actors of 2016.csv",header = TRUE, stringsAsFactors = FALSE )
+
+top100directors <- Top.100.Directors.Working.Today$Name
+top100directors <- paste(top100directors)
+
+top100actors <- The.Top.100.Actors.of.2016$Name
+top100actors <- paste(top100actors)
+
+# from: http://www.imdb.com/list/ls072596173/
+#top100directors <- Top.100.Directors.Working.Today$Name
+#top100directors <- paste(top100directors)
+
+#top100actors <- The.Top.100.Actors.of.2016$Name
+#top100actors <- paste(top100actors)
+```
+
+```{r}
+# Drop useless columns
+movies <- movies[,!(names(movies) %in% c('homepage','overview','status',
+                                           'title','tagline','original_title'))]
+credits <- credits[,!(names(credits) %in% c('title'))]
+
+dim(movies)
+```
+
+###2.1. Let's clean movies dataset
+
+#####2.1.1. Distinct Months; Holiday month
+
+```{r}
+# Extract month of release date; put into new column
+movies$release_date <- as.POSIXlt(movies$release_date, format="%Y-%m-%d")
+movies$release_month <- lubridate::month(movies$release_date)
+
+# From Linear Regression using each of 12 months as dummy categories,
+# we saw that months 5, 6, 11 and 12 are important,
+# while the rest are unimportant.
+# We will aggregate this as 'holiday month' (beginning of Summer; beginning of Winter)
+movies$holiday_month <- 0
+movies[which(movies$release_month %in% c(5,6,11,12)),]['holiday_month'] <- 1
+
+#drop release date and month
+movies <- movies[ , !(names(movies) %in% c('release_date','release_month'))]
+```
+
+
+#####2.1.2. Number of Languages; English / No english
+
+```{r}
+# count number of languages
+movies$num_lang <- stringr::str_count(movies$spoken_languages, "\"name\":")
+
+movies$original_isEnglish <- 0
+movies[which(movies$original_language == 'en'),]['original_isEnglish'] <- 1
+
+# drop original lanugage; spoken languages
+movies <- movies[ , !(names(movies) %in% c('original_language', 'spoken_languages'))]
+```
+
+
+#####2.1.3. Distinct Production Countries
+
+```{r}
+# turn JSON into DF with one country per row
+countryDF = movies %>% filter(nchar(as.character(production_countries))>2) %>% mutate(js=lapply(as.character(production_countries),fromJSON)) %>% unnest(js) %>% dplyr::select(id, production_countries=name)
+
+# Select Unique Countries
+# Distinct_Countries = countryDF %>% distinct(production_countries)
+
+df <- as.data.frame(table(countryDF$production_countries))
+head(with(df,df[order(Freq,decreasing = TRUE),]))
+```
+
+> We will make dummy variables on top 6 frequent countries on the list.
+
+```{r}
+# United States
+movies$country_USA <- 0
+movies$country_UK <- 0
+movies$country_Germany <- 0
+movies$country_France <- 0
+movies$country_Canada <- 0
+movies$country_Austr <- 0
+
+for (i in 1:nrow(movies)) {
+  noQuotes <- strsplit(toString(movies$production_countries[i]),'\"')
+  noQuotes <- unlist(noQuotes)
+  
+  if (any(noQuotes == "United States of America")) {
+    movies$country_USA[i] <- 1
+  }
+  if (any(noQuotes == "United Kingdom")) {
+    movies$country_UK[i] <- 1
+  }
+  if (any(noQuotes == "Germany")) {
+    movies$country_Germany[i] <- 1
+  }
+  if (any(noQuotes == "France")) {
+    movies$country_France[i] <- 1
+  }
+  if (any(noQuotes == "Canada")) {
+    movies$country_Canada[i] <- 1
+  }
+  if (any(noQuotes == "Australia")) {
+    movies$country_Austr[i] <- 1
+  }
+}
+
+# drop production countries column
+movies <- movies[,!(names(movies) %in% c('production_countries'))]
+```
+
+```{r}
+# Check correct numbers below.
+# Should match with frequencies from
+# head(with(df,df[order(Freq,decreasing = TRUE),]))
+
+as.data.frame(table(movies$country_UK))
+```
+
+
+#####2.1.4. Distinct Genres
+
+```{r}
+# turn JSON into DF with one genre per row
+genreDF= movies %>% filter(nchar(as.character(genres))>2) %>% mutate(js=lapply(as.character(genres),fromJSON)) %>% unnest(js) %>% dplyr::select(id, genre=name)
+# slice(genredf) # View the newly created DF
+
+# Select Unique Genres
+Distinct_Genres = unique(genreDF$genre)
+  
+# Make dummy variable for each genre
+for (name in Distinct_Genres) {
+  
+  # prepend 'genre' to all genre names
+  col_Name <- paste('genre', name, sep='_')
+  movies[col_Name] <- 0
+
+  movies[grep(name,movies$genres),][col_Name] <- 1
+}
+
+# Drop raw json genres
+movies <- movies[,!(names(movies) %in% c('genres'))]
+```
+
+
+#####2.1.5. Distinct Keywords
+
+```{r}
+# turn JSON into DF with one keyword per row
+keywordDF=movies %>% filter(nchar(as.character(keywords))>2) %>% mutate(js=lapply(as.character(keywords),fromJSON)) %>% unnest(js) %>% dplyr::select(id,keywords=name)
+
+# Select Unique Genres
+# Distinct_Keywords = unique(keywordDF$keywords)
+# length(Distinct_Keywords)
+
+df <- as.data.frame(table(keywordDF$keywords))
+with(df,df[order(Freq,decreasing = TRUE),])
+```
+
+#####2.1.6. Distinct Production Companies
+
+```{r}
+# turn JSON into DF with one company per row
+companyDF=movies %>% filter(nchar(as.character(production_companies))>2) %>% mutate(js=lapply(as.character(production_companies),fromJSON)) %>% unnest(js) %>% dplyr::select(id,production_companies=name)
+
+# Select Unique Genres
+# Distinct_Companies = companyDF %>% distinct(production_companies)
+
+df <- as.data.frame(table(companyDF$production_companies))
+with(df,df[order(Freq,decreasing = TRUE),])
+```
+
+###2.2. Lets Clean Credits Dataset
+
+```{r}
+# Split JSON for cast
+all_cast <- credits %>%      # start with the raw tibble 
+  filter(nchar(as.character(cast)) > 2) %>%        # filter out movies with empty cast 
+  mutate(                          #       
+    js_cast  =  lapply(as.character(cast), fromJSON)  # turn the JSON into a list
+  )  %>%                           #
+  unnest(js_cast) %>% dplyr::select(movie_id, cast_id, character, credit_id, gender, id, name = name, order)
+
+# Split JSON for crew
+all_crew <- credits %>%      # start with the raw tibble 
+  filter(nchar(as.character(crew)) > 2) %>%        # filter out movies with empty crew  
+  mutate(                                 
+    js_crew  =  lapply(as.character(crew), fromJSON)  # turn the JSON into a list
+  )  %>%                           #
+  unnest(js_crew) %>% dplyr::select(movie_id, credit_id, department, gender, id, job, name = name)
+```
+
+#####2.2.1. Check if Director is in top 100
+
+```{r}
+# List all movie directors
+directors <- filter(all_crew[,c('movie_id','job','name')], all_crew$job == 'Director')
+directors
+```
+
+```{r}
+# List of top 100 directors
+with(Top.100.Directors.Working.Today, Top.100.Directors.Working.Today[order(Name),])['Name']
+```
+
+> Make a column to represent if the movie has top director.
+
+```{r}
+# New binary column to aggregate by director fame
+credits$topDirector <- 0
+
+# If director in top 100 directors list, change from 0 to 1
+for (i in 1:nrow(directors)) {
+  if (directors$name[i] %in% top100directors) {       # match director and credits DFs by ID
+    credits[which(credits$movie_id == directors$movie_id[i]),]['topDirector'] <- 1
+  }
+}
+
+# Drop crew column
+credits <- credits[,!(names(credits) %in% c('crew'))]
+credits
+```
+
+```{r}
+# Check value frequencies
+as.data.frame(table(credits$topDirector))
+```
+
+#####2.2.2. Check if any top 100 Actors
+
+```{r}
+# List all movie directors
+actors <- filter(all_cast[,c('movie_id','name')])
+actors
+```
+
+> Make a column to represent if the movie has top actor.
+
+```{r}
+# New binary column to aggregate by director fame
+credits$topActor <- 0
+
+# If Actors in top 100 actors list, change from 0 to 1
+for (i in 1:nrow(actors)) {
+  if (actors$name[i] %in% top100actors) {       # match actors and credits DFs by ID
+    credits[which(credits$movie_id == actors$movie_id[i]),]['topActor'] <- 1
+  }
+}
+
+head(credits$topActor)
+```
+
+
+#####2.2.3. Average Genders of Cast
+
+```{r}
+# 0 = unknown
+# 1 = Female
+# 2 = Male
+
+CastGenders <- filter(all_cast[,c('movie_id','gender')],
+                  all_cast$gender != 0)
+CastGenders <- aggregate(CastGenders$gender, by=list(CastGenders$movie_id), FUN=mean)
+
+# Append Avg Genders to Credits
+credits$CastGenderAVG <- 1.5
+
+for (ID in CastGenders$Group.1){
+  credits[which(credits$movie_id == ID),]['CastGenderAVG'] <- 
+    CastGenders[which(CastGenders$Group.1 == ID),]['x']
+}
+
+# Drop cast column
+credits <- credits[,!(names(credits) %in% c('cast'))]
+```
+
+#####2.2.4. Merge movie and credit dataset
+
+```{r}
+TMDB_Cleaned <- left_join(credits,movies, by = c('movie_id' = 'id'))
+colnames(TMDB_Cleaned)
+dim(TMDB_Cleaned)
+```
+
+#####2.2.5. Remove keywords and production_companies from the dataset as they are huge and is less significant to predict the revenue
+
+```{r}
+# remove this after cleaning keywords and companies properly
+TMDB_Cleaned <- TMDB_Cleaned[,!(names(TMDB_Cleaned) %in% c('keywords','production_companies'))]
+
+TMDB_Cleaned <- na.omit(TMDB_Cleaned)
+dim(TMDB_Cleaned)
+```
+
+```{r}
+write.csv(TMDB_Cleaned, file='TMDB_Cleaned.csv')
+```
+
+
+```{r}
+tmdb <- read.csv("TMDB_Cleaned.csv", header = TRUE, stringsAsFactors = FALSE)
+tmdb1<-subset(tmdb,select=-c(X,movie_id))
+head(tmdb1)
+```
+
+
+#####2.2.6. Concise num_lang to 4 spoken languages in a movie for better analysis
+
+```{r}
+tmdb1 <- tmdb1 %>% mutate(num_lang = ifelse(num_lang >= 5, 4, num_lang))
+
+df <- as.data.frame(table(tmdb1$num_lang))
+head(with(df,df[order(Freq,decreasing = TRUE),]))
+```
+
+
+```{r}
+head(tmdb1)
+```
+
+#####2.2.7. Converting binary columns to categorical variables
+
+```{r}
+tmdb1$original_isEnglish<- as.factor(tmdb1$original_isEnglish)
+tmdb1$holiday_month<- as.factor(tmdb1$holiday_month)
+tmdb1$topDirector<- as.factor(tmdb1$topDirector)
+tmdb1$topActor <- as.factor(tmdb1$topActor)
+tmdb1$num_lang <- as.factor(tmdb1$num_lang)
+tmdb1$genre_Crime <- as.factor(tmdb1$genre_Crime)
+tmdb1$genre_Science.Fiction <- as.factor(tmdb1$genre_Science.Fiction)
+tmdb1$genre_Family<- as.factor(tmdb1$genre_Family)
+tmdb1$genre_Animation <- as.factor(tmdb1$genre_Animation)
+tmdb1$genre_Western <- as.factor(tmdb1$genre_Western)
+tmdb1$genre_Adventure <- as.factor(tmdb1$genre_Adventure)
+tmdb1$genre_Romance <- as.factor(tmdb1$genre_Romance)
+tmdb1$genre_Drama <- as.factor(tmdb1$genre_Drama)
+tmdb1$genre_Action <- as.factor(tmdb1$genre_Action)
+tmdb1$genre_Documentary <- as.factor(tmdb1$genre_Documentary)
+tmdb1$genre_Comedy <- as.factor(tmdb1$genre_Comedy)
+tmdb1$genre_Horror <- as.factor(tmdb1$genre_Horror)
+tmdb1$genre_Mystery <- as.factor(tmdb1$genre_Mystery)
+tmdb1$genre_History <- as.factor(tmdb1$genre_History)
+tmdb1$genre_Music <- as.factor(tmdb1$genre_History)
+tmdb1$genre_Foreign <- as.factor(tmdb1$genre_Foreign)
+tmdb1$genre_TV.Movie <- as.factor(tmdb1$genre_TV.Movie)
+tmdb1$genre_Fantasy <- as.factor(tmdb1$genre_Fantasy)
+tmdb1$genre_Thriller <- as.factor(tmdb1$genre_Thriller)
+tmdb1$genre_War <- as.factor(tmdb1$genre_War)
+tmdb1$country_USA <- as.factor(tmdb1$country_USA)
+tmdb1$country_UK <- as.factor(tmdb1$country_UK)
+tmdb1$country_France <- as.factor(tmdb1$country_France)
+tmdb1$country_Germany <- as.factor(tmdb1$country_Germany)
+tmdb1$country_Canada <- as.factor(tmdb1$country_Canada)
+tmdb1$country_Austr <- as.factor(tmdb1$country_Austr)
+#tmdb2$revenue <- log(tmdb2$revenue)
+#tmdb2$budget <- log(tmdb2$budget)
+str(tmdb1)
+```
+
+#####2.2.8. Scale the data for uniformity in numerical values of the dataset
+
+```{r}
+library(MASS)
+ind <- sapply(tmdb1, is.numeric)
+tmdb1[ind] <- lapply(tmdb1[ind], scale)
+str(tmdb1)
+```
+
+#####2.2.9. Let's explore data to look at our numerical values
+
+```{r}
+summary(tmdb1)
+```
+
+#####2.2.10. Investigate for missing values
+
+```{r}
+sapply(tmdb1,function(x) sum(is.na(x))) # number of missing values for each variable 
+```
+
+##3. Predictive modeling
+Models used to build the predictive model- 
+*Linear regression 
+*Lasso regression 
+*Ridge Regression 
+*Regression Trees 
+*Random Forest 
+
+
+##### Plot scatterplot on numerical variables
+
+```{r}
+scatterplotMatrix(~tmdb1$revenue+tmdb1$budget+tmdb1$popularity+tmdb1$runtime+tmdb1$CastGenderAVG+tmdb1$vote_average+tmdb1$vote_count)
+```
+
+```{r}
+library(corrplot)
+numeric_col <- sapply(tmdb1, is.numeric)
+tmdb1_numeric<- tmdb1[,numeric_col]
+Correlation<-cor(tmdb1_numeric)
+corrplot(Correlation, method = "color")
+```
+
+####3.1. Linear Regression
+
+#####3.1.1. Perfrom stepwise regression to identify the top predictors
+
+```{r}
+null_model<-lm(revenue~1,data=tmdb1)
+
+full_model<-lm(revenue~.,data=tmdb1)
+
+step(null_model, scope = list(lower = null_model, upper = full_model), direction = "both")
+```
+
+```{r}
+summary(full_model)
+```
+
+```{r}
+dflm1 <- lm(revenue ~ vote_count + budget + genre_Family + holiday_month + 
+    topDirector + genre_Science.Fiction + topActor + genre_Crime + 
+    country_Germany + popularity + genre_Animation + genre_Western + 
+    genre_Adventure + genre_Romance + genre_Drama + genre_Action + 
+    runtime, data = tmdb1)
+summary(dflm1)
+```
+
+
+```{r}
+dflm2 <- lm(revenue ~ budget + runtime + vote_count + genre_Crime + genre_Drama + genre_Animation + genre_Family + + holiday_month:vote_count + topActor:vote_count + topDirector:vote_count + topDirector:budget + genre_Action:vote_count + genre_Adventure:vote_count + genre_Crime:vote_count + genre_Romance:vote_count + genre_Science.Fiction:vote_count + genre_Western:vote_count + holiday_month + vote_average:vote_count + budget:vote_count + runtime:vote_count + vote_count:popularity , data = tmdb1)
+summary(dflm2)
+```
+
+
+```{r}
+par(mfrow=c(2,2)) # init 4 charts in 1 panel
+plot(dflm2)
+```
+
+```{r}
+par(mfrow = c(1, 2))
+hist(dflm1$residuals)
+qqnorm(dflm1$residuals)
+qqline(dflm1$residuals)
+```
+
+```{r}
+library(grid)
+library(gridExtra)
+g_budget <- ggplot(data=NULL, aes(x=tmdb1$budget, y=dflm2$residuals)) +
+  geom_point()
+g_votecount <- ggplot(data=NULL, aes(x=tmdb1$vote_count, y=dflm2$residuals)) +
+  geom_point()
+g_popularity <- ggplot(data=NULL, aes(x=tmdb1$popularity, y=dflm2$residuals)) +
+  geom_point()
+grid.arrange(g_budget, g_votecount,g_popularity)
+```
+
+#####3.1.2. Perfrom stepwise regression to identify the top predictors To explore the data, created several histograms of runtime, vote_count, vote_average, popularity to understand their distribution
+
+```{r}
+options(repr.plot.width=6, repr.plot.height=4) 
+g1<-ggplot(tmdb1,aes(x=tmdb1$runtime))+geom_histogram(binwidth=5,aes(y=..density..),fill="green4")
+g2<-ggplot(tmdb1,aes(x=tmdb1$vote_count))+geom_histogram(binwidth=50,aes(y=..count..),fill="red")
+g3<-ggplot(tmdb1,aes(x=tmdb1$popularity))+geom_histogram(binwidth=1,aes(y=..count..),fill="green4")
+g4<-ggplot(tmdb1,aes(x=tmdb1$vote_average))+geom_histogram(binwidth=5,aes(y=..count..),fill="red")
+grid.arrange(g1,g2,g3,g4,nrow=2,ncol=2)
+```
+
+#####3.1.3. Split dataset to find test R-squared for linear model
+
+```{r}
+set.seed(1)    # for reproducible example
+
+# training set
+train <- sample(1:nrow(tmdb1),0.70*nrow(tmdb1))   # random sample of 75% of data
+
+fit <- lm(revenue ~ + budget + runtime + vote_count + genre_Crime + genre_Drama + genre_Animation + genre_Family + + holiday_month:vote_count + topActor:vote_count + topDirector:vote_count + topDirector:budget + genre_Action:vote_count + genre_Adventure:vote_count + genre_Crime:vote_count + genre_Romance:vote_count + genre_Science.Fiction:vote_count + genre_Western:vote_count + holiday_month + vote_average:vote_count + budget:vote_count + runtime:vote_count + vote_count:popularity , data = tmdb1[train,])
+```
+
+```{r}
+test <- -train
+test.pred <- predict(fit,newdata=tmdb1[test,])
+test.y    <- tmdb1[test,]$revenue
+
+SS.total      <- sum((test.y - mean(test.y))^2)
+SS.residual   <- sum((test.y - test.pred)^2)
+SS.regression <- sum((test.pred - mean(test.y))^2)
+SS.total - (SS.regression+SS.residual)
+# [1] 8958890
+
+# NOT the fraction of variability explained by the model
+test.rsq <- 1 - SS.residual/SS.total  
+test.rsq
+```
+
+####3.2. Ridge Regression
+
+```{r}
+x <- model.matrix(revenue ~ budget + runtime + vote_count + genre_Crime + genre_Drama + genre_Animation + genre_Family + + holiday_month:vote_count + topActor:vote_count + topDirector:vote_count + topDirector:budget + genre_Action:vote_count + genre_Adventure:vote_count + genre_Crime:vote_count + genre_Romance:vote_count + genre_Science.Fiction:vote_count + genre_Western:vote_count + holiday_month + vote_average:vote_count + budget:vote_count + runtime:vote_count + vote_count:popularity, tmdb1)
+y = tmdb1 %>%
+  dplyr::select(revenue) %>%
+  unlist() %>%
+  as.numeric()
+```
+
+#####3.2.1. Split dataset to train and test
+
+```{r}
+set.seed(1)
+
+train = tmdb1 %>%
+  sample_frac(0.7)
+
+test = tmdb1 %>%
+  setdiff(train)
+
+x_train = model.matrix(revenue ~ budget + runtime + vote_count + genre_Crime + genre_Drama + genre_Animation + genre_Family + + holiday_month:vote_count + topActor:vote_count + topDirector:vote_count + topDirector:budget + genre_Action:vote_count + genre_Adventure:vote_count + genre_Crime:vote_count + genre_Romance:vote_count + genre_Science.Fiction:vote_count + genre_Western:vote_count + holiday_month + vote_average:vote_count + budget:vote_count + runtime:vote_count + vote_count:popularity, train)[,-1]
+
+x_test = model.matrix(revenue ~ budget + runtime + vote_count + genre_Crime + genre_Drama + genre_Animation + genre_Family + + holiday_month:vote_count + topActor:vote_count + topDirector:vote_count + topDirector:budget + genre_Action:vote_count + genre_Adventure:vote_count + genre_Crime:vote_count + genre_Romance:vote_count + genre_Science.Fiction:vote_count + genre_Western:vote_count + holiday_month + vote_average:vote_count + budget:vote_count + runtime:vote_count + vote_count:popularity, test)[,-1]
+
+y_train = train %>%
+  dplyr::select(revenue) %>%
+  unlist() %>%
+  as.numeric()
+
+y_test = test %>%
+  dplyr::select(revenue) %>%
+  unlist() %>%
+  as.numeric()
+```
+
+#####3.2.2. Create a set of lambda values and train the model
+
+```{r}
+lambda <- 10^seq(2, -2, length = 100)
+```
+
+```{r}
+ridge_mod = glmnet(x_train, y_train, alpha=0, lambda = lambda)
+plot(ridge_mod, xvar='lambda', label = TRUE, main = "Ridge Regression")
+```
+
+```{r}
+#Running 10-fold cross validation.
+set.seed(0)
+cv.ridge.out = cv.glmnet(x_train, y_train, lambda = lambda, alpha = 0, nfolds = 10)
+plot(cv.ridge.out, main = "Ridge Regression\n")
+bestlambda.ridge = cv.ridge.out$lambda.min
+bestlambda.ridge
+log(bestlambda.ridge)
+```
+
+```{r}
+#What is the test MSE associated with this best value of lambda?
+ridge.bestlambdatrain = predict(ridge_mod, s = bestlambda.ridge, newx = x_test)
+mean((ridge.bestlambdatrain - y_test)^2)
+```
+
+```{r}
+y_predicted <- predict(ridge_mod, s = bestlambda.ridge, newx = x_test)
+
+# Sum of Squares Total and Error
+sst <- sum((y_test - mean(y_test))^2)
+sse <- sum((y_predicted - y_test)^2)
+
+# R squared
+rsq_ridge <- 1 - sse / sst
+rsq_ridge
+```
+
+####3.2. Lasso Regression
+
+```{r}
+lasso.models = glmnet(x_train, y_train, alpha = 1, lambda = lambda)
+plot(lasso.models)
+```
+
+
+```{r}
+#Running 10-fold cross validation.
+set.seed(0)
+cv.lasso.out = cv.glmnet(x_train, y_train, lambda = lambda, alpha = 1, nfolds = 10)
+plot(cv.lasso.out, main = "Lasso Regression\n")
+bestlambda.lasso = cv.lasso.out$lambda.min
+bestlambda.lasso
+```
+
+```{r}
+#What is the test MSE associated with this best value of lambda?
+lasso.bestlambdatrain = predict(lasso.models, s = bestlambda.lasso, newx = x_test)
+mean((lasso.bestlambdatrain - y_test)^2)
+```
+
+```{r}
+#Fit the lasso regression on the train dataset using the best lambda value
+#from cross validation; inspect the coefficient estimates.
+lasso.out = glmnet(x_train, y_train, alpha = 1)
+predict(lasso.out, type = "coefficients", s = bestlambda.lasso)
+```
+
+```{r}
+#Let's also inspect the MSE of our final lasso model on all our data.
+lasso.bestlambda = predict(lasso.out, s = bestlambda.lasso, newx = x_test)
+mean((lasso.bestlambda - y_test)^2)
+```
+
+```{r}
+y_predicted <- predict(lasso.out, s = bestlambda.ridge, newx = x_test)
+
+# Sum of Squares Total and Error
+sst <- sum((y_test - mean(y_test))^2)
+sse <- sum((y_predicted - y_test)^2)
+
+# R squared
+rsq_lasso <- 1 - sse / sst
+rsq_lasso
+```
+
+
+
+####3.3. Regression Trees
+
+```{r}
+#Create training and testing datasets
+library(rpart)
+regTree <- rpart(revenue ~ vote_count + budget +  holiday_month + 
+    topDirector +  topActor +  popularity + genre_Family + genre_Crime + genre_Animation + 
+    genre_Adventure + genre_Romance + genre_Drama + genre_Action + genre_Science.Fiction +
+    runtime, method="anova", data=tmdb1 )
+```
+
+```{r}
+plot(regTree, uniform=TRUE, 
+ main="Regression Tree for predicting Revenue")
+ text(regTree, use.n=TRUE, cex = 0.6)
+```
+
+```{r}
+library(rpart.plot)
+rpart.plot(regTree,digits = 4)
+```
+
+
+```{r}
+p.rpart <- predict(regTree,tmdb1)
+mean((p.rpart-tmdb1$revenue)^2)
+```
+
+```{r}
+# Sum of Squares Total and Error
+sst <- sum((tmdb1$revenue - mean(tmdb1$revenue))^2)
+sse <- sum((p.rpart - tmdb1$revenue)^2)
+
+# R squared
+rsq_tree <- 1 - sse / sst
+rsq_tree
+```
+
+####3.4. Random Forest 
+
+```{r}
+set.seed(45)
+train.index <- sample(row.names(tmdb1), dim(tmdb1)[1]*0.6)
+test.index <- setdiff(row.names(tmdb1), train.index)
+train <- tmdb1[train.index, ]
+test <- tmdb1[test.index, ]
+```
+
+```{r}
+set.seed(100)
+library(randomForest)
+rf <- randomForest(revenue ~ vote_count + budget + genre_Family + holiday_month + 
+topDirector +topActor +popularity + genre_Crime + genre_Animation + 
+genre_Adventure + genre_Romance + genre_Drama + genre_Action + genre_Science.Fiction +
+runtime,data=train,ntree=500)
+```
+
+```{r}
+pred_rf <- predict(rf,test)
+mean((pred_rf - test$revenue)^2)
+```
+
+
+```{r}
+# Sum of Squares Total and Error
+sst <- sum((test$revenue - mean(test$revenue))^2)
+sse <- sum((pred_rf - test$revenue)^2)
+
+# R squared
+rsq_rf <- 1 - sse / sst
+rsq_rf
+```
+
+```{r}
+pred_rf1 <- predict(rf,tmdb1)
+mean((pred_rf1-tmdb1$revenue)^2)
+
+```
+
+
+```{r}
+#install reptree packages
+have.packages <- installed.packages()
+cran.packages <- c('devtools','plotrix','randomForest','tree')
+to.install <- setdiff(cran.packages, have.packages[,1])
+if(length(to.install)>0) install.packages(to.install)
+
+library(devtools)
+if(!('reprtree' %in% installed.packages())){
+  install_github('araastat/reprtree')
+}
+for(p in c(cran.packages, 'reprtree')) eval(substitute(library(pkg), list(pkg=p)))
+
+```
+
+```{r}
+library(randomForest)
+library(reprtree)
+
+
+reprtree:::plot.getTree(rf)
+```
+
+```{r}
+set.seed(100)
+library(randomForest)
+rf_node <- randomForest(revenue ~ vote_count + budget + genre_Family + holiday_month + 
+topDirector +topActor +popularity + genre_Crime + genre_Animation + 
+genre_Adventure + genre_Romance + genre_Drama + genre_Action + genre_Science.Fiction +
+runtime,data=train, maxnodes=50, ntree=500)
+```
+
+```{r}
+reprtree:::plot.getTree(rf_node)
+```
+
+
+## Conclusion
+
+Predictive Model    | R-squared      | Comment
+------------------  | -------------  | ---------------------------------------------------------------
+Linear Regression   | 0.7571309      | Linear regression has too many non-linearities. The R-squared on complete dataset was 0.789
+Ridge Regression    | 0.7583279      | Ridge Regression add a penalty on sum of squared beta. This has the effect of “shrinking” large                                              values of beta towards zero. As a result the ridge regression estimates are often more accurate.
+Lasso Regression    | 0.7472891      | The LASSO works in a similar way to ridge regression except that it uses an L1 penalty. LASSO is not                                         quite as computational efficient as ridge regression.
+Regression Trees    | 0.7260629      | A decision tree is built on an entire dataset, using all the features/variables of interest, using all                                        the features/variables of interest 
+Random Froests      | 0.7886412      | Accuracy keeps increasing as you increase the number of trees, but becomes constant at certain point.                                        Unlike decision tree, it won't create highly biased model and reduces the variance.
+
+Based on our scaled data our top predictors changed in Linear and Random Forest models. In Random Forest we have vote_count, popularity, genre_adventure, top_actor, holiday_month to be top5 predictors.
+
+We conclude that Random Forests is the best model to predict the revenue. The point of RF is to prevent overfitting. It does this by creating random subsets of the features and building smaller (shallow) trees using the subsets and then it combines the subtrees. The downside of RF is it can be slow if you have a single process but it can be parallelized.
