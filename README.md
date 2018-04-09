@@ -73,8 +73,6 @@ Given the information  about a movie such as release month, cast, budget, film r
 ![diagnostic plots](https://user-images.githubusercontent.com/25557540/38492936-52257fe8-3ba5-11e8-902f-3aefbbcd2e51.png)
 
 ![residualsvsbudget](https://user-images.githubusercontent.com/25557540/38493012-8f77ac04-3ba5-11e8-9af0-8d88366c5e99.png)
-![residualsvspopularity](https://user-images.githubusercontent.com/25557540/38493013-8f946948-3ba5-11e8-9daf-caf65a69ef40.png)
-![residualsvsvote_count](https://user-images.githubusercontent.com/25557540/38493015-8fb1a026-3ba5-11e8-8a41-db50dfc7990e.png)
 
 * After Splitting dataset to find test R-squared for linear model we get efficiency of 75%
 
