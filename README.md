@@ -18,13 +18,13 @@
 ******************************************************************************************************************************
 ### III. Training Machine Learning Algorithms:
 
-** Linear Regression **
+**Linear Regression:**
 
-** Lasso Regression **
+**Lasso Regression:**
 
-** Ridge Regression **
+**Ridge Regression: **
 
-** Random Forest **
+**Random Forest:**
 
 
 ******************************************************************************************************************************
