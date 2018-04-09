@@ -43,7 +43,7 @@ Given the information  about a movie such as release month, cast, budget, film r
 * crew(String)
 
 
-**Dataset Cleaning:**
+**Dataset Cleaning & Preparation:**
 
 * So I have first tried creating different dataframes for extracting data from the json object. I use jsonlite library to extract the data. 
 * Combining the keywords,genres, production_companies, production countries & spoken languages of a movie in a single column.
@@ -57,7 +57,8 @@ Given the information  about a movie such as release month, cast, budget, film r
 * Spliting JSON for cast, crew to select director, actors & actoress
 * Downloading List of top 100 directors, actors and converting the directors, actors into dummy varible based on the condition that if director/actor of the film  in the top 100 list then assign 1 else 0
 * Assigning Dummy variable for Gender
-
+* Converting binary columns to categorical variables
+* Scaleing the dataset for uniformity 
 ******************************************************************************************************************************
 ******************************************************************************************************************************
 ### III. Training Machine Learning Algorithms:
