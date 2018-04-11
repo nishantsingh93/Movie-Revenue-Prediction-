@@ -80,11 +80,17 @@ Given the information  about a movie such as release month, cast, budget, film r
 
 
 ### IV. Training Machine Learning Algorithms:
-
-#### Linear Regression:
+**Scatter Plot:**
 ![scatterplotmatrix](https://user-images.githubusercontent.com/25557540/38492900-35d069d4-3ba5-11e8-90ee-295020f6e292.png)
+* The scatterplot matrices are a great way to roughly determine if you have a linear correlation between multiple variables
+* But Scatterplot matrices are not so good for looking at discrete variables
+* In our dataset we can see that the variables have non linear correlation
+**Correlation plot:**
 ![correlation plot](https://user-images.githubusercontent.com/25557540/38493373-cff5fa64-3ba6-11e8-8d71-fbd051af52e8.png)
 
+* The correlation plot shows high correlation between <b>revenue</b> & <b>budget</b>, <b>vote_count</b> & <b>popularity</b> and <b>revenue</b> & <b>votecount</b>
+
+#### Linear Regression:
 
 **Result:**
 
