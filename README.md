@@ -85,6 +85,7 @@ Given the information  about a movie such as release month, cast, budget, film r
 * The scatterplot matrices are a great way to roughly determine if you have a linear correlation between multiple variables
 * But Scatterplot matrices are not so good for looking at discrete variables
 * In our dataset we can see that the variables have non linear correlation
+
 **Correlation plot:**
 ![correlation plot](https://user-images.githubusercontent.com/25557540/38493373-cff5fa64-3ba6-11e8-8d71-fbd051af52e8.png)
 
@@ -92,13 +93,27 @@ Given the information  about a movie such as release month, cast, budget, film r
 
 #### Linear Regression:
 
+* Intially we run a full model on the full dataset to find correlation between the top predictors and the target variables
+* After running the full model we find that our top predictors are <b>budget</b>, <b>runtime </b>, <b>vote_count</b>, <b>genre_Crime</b>, <b> genre_Drama </b>, <b>genre_Animation</b>, <b>genre_Family</b> and <b>holiday_month</b>
+* The R square value for the model comes out to be 0.7893
+* Now we run the model with our top predictors after splitting the dataset into test, train with 75/25 split ratio and choosing the random sample for each set
+* The accuracy for this model is <b>0.7571309</b> 
+* We classify the above model as a better model than the previous linear model beacuse of dataset being split into test and train
+
 **Result:**
 
 **Diagnostic plots:**
 
 ![diagnostic plots](https://user-images.githubusercontent.com/25557540/38492936-52257fe8-3ba5-11e8-902f-3aefbbcd2e51.png)
 
-* This plot shows that the residuals have non-linear patterns. There is a non-linear relationship between predictor variables and an outcome variable and the pattern shows up in this plot if the model doesn’t capture the non-linear relationship.
+* <b>Residuals vs Fitted:</b>  This plot shows that the residuals have non-linear patterns. There is a non-linear relationship between predictor variables and an outcome variable and the pattern shows up in this plot if the model doesn’t capture the non-linear relationship.
+
+* <b>Normal Q-Q:</b>A Q-Q plot compares the quantiles of a dataset and a set of theoretical quantiles from a probability distribution.Therefore it basically compares every observed value against a standard normal distribution with the same number of points. The graph is “skewed right,” meaning that most of the data is distributed on the left side with a long “tail” of data extending out to the right.
+
+* <b>Scale Location:</b> This plot is similar to the residuals versus fitted values plot, but it uses the square root of the standardized residuals. Like the first plot, there should be no discernable pattern to the plot.
+
+
+* <b>Residuals vs Leverage:</b> The Influence of an observation can be thought of in terms of how much the predicted scores would change  if the observation is excluded. Cook’s Distance is a pretty good measure of influence of an observation. The leverage of an observation is based on how much the observation’s value on the predictor variable differs from the mean of the predictor variable. The more the leverage of an observation , the greater potential that point has in terms of influence. In this plot the dotted red lines are cook’s distance and the areas of interest for us are the ones outside dotted line on top right corner or bottom right corner. If any point falls in that region , we say that the observation has high leverage or potential for influencing our model is higher if we exclude that point. ts not always the case though that all outliers will have high leverage or vice versa. In this case observation #1 & #96 has high leverage and our choices are Justify the inclusion of #1 & #96 and keep the model as is, Include quadratic term as indicated by Residual vs fitted plot and remodel and Exclude observation #1 & #96 and remodel.
 
 ![residualsvsbudget](https://user-images.githubusercontent.com/25557540/38493012-8f77ac04-3ba5-11e8-9af0-8d88366c5e99.png)
 
