@@ -142,6 +142,7 @@ opt_lambda
 
 #### Ridge Regression:
 
+* 
 **Result:**
 ![lasso regression](https://user-images.githubusercontent.com/25557540/38493218-43a9f13c-3ba6-11e8-8326-0cdbfefccf29.png)
 ![lasso regressionrr](https://user-images.githubusercontent.com/25557540/38493248-57a91f14-3ba6-11e8-9cf6-38cba3dc2fda.png)
