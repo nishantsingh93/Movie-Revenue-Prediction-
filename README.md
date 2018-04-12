@@ -134,7 +134,8 @@ ridge_mod = glmnet(x_train, y_train, alpha=0, lambda = lambda)
 * Shows the effect of collinearity in the coefficients of an estimator
 * Ridge Regression is the estimator used in this example. Each color represents a different feature of the coefficient vector, and this is displayed as a function of the regularization parameter
 * The above graph also shows the usefulness of applying Ridge regression to highly ill-conditioned matrices. For such matrices, a slight change in the target variable can cause huge variances in the calculated coefficients. Therefore, it is useful to set a certain regularization (lambda) to reduce this variation (noise).
-* When lambda is very large, the regularization effect dominates the squared loss function and the coefficients tend to zero. * At the end of the path, as lambda tends toward zero and the solution tends towards the ordinary least squares, coefficients exhibit big oscillations. In practise it is necessary to tune lambda in such a way that a balance is maintained between both.
+* When lambda is very large, the regularization effect dominates the squared loss function and the coefficients tend to zero 
+* At the end of the path, as lambda tends toward zero and the solution tends towards the ordinary least squares, coefficients exhibit big oscillations. In practise it is necessary to tune lambda in such a way that a balance is maintained between both.
 
 
 ![cross validationrr](https://user-images.githubusercontent.com/25557540/38493242-52799564-3ba6-11e8-9ca9-8e6e39b5eb9f.png)
