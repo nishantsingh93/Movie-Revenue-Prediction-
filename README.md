@@ -127,10 +127,18 @@ Given the information  about a movie such as release month, cast, budget, film r
 ridge_mod = glmnet(x_train, y_train, alpha=0, lambda = lambda)
 ```
 
+
 **Result:**
 ![ridge regression](https://user-images.githubusercontent.com/25557540/38493214-3fddddb6-3ba6-11e8-827d-cead0be5d5be.png)
-![cross validationrr](https://user-images.githubusercontent.com/25557540/38493242-52799564-3ba6-11e8-9ca9-8e6e39b5eb9f.png)
 
+![cross validationrr](https://user-images.githubusercontent.com/25557540/38493242-52799564-3ba6-11e8-9ca9-8e6e39b5eb9f.png)
+* cv.glmnet() uses cross-validation to work out how well each model generalises, which we can visualise as:
+* The lowest point in the curve indicates the optimal lambda: the log value of lambda that best minimised the error in cross-validation. We can extract this values as
+```
+opt_lambda <- cv.ridge.out$lambda.min
+opt_lambda
+```
+* The best lambda value is <b>0.01</b>
 
 #### Ridge Regression:
 
