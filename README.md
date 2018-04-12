@@ -115,11 +115,12 @@ Given the information  about a movie such as release month, cast, budget, film r
 
 * <b>Residuals vs Leverage:</b> The Influence of an observation can be thought of in terms of how much the predicted scores would change  if the observation is excluded. Cook’s Distance is a pretty good measure of influence of an observation. The leverage of an observation is based on how much the observation’s value on the predictor variable differs from the mean of the predictor variable. The more the leverage of an observation , the greater potential that point has in terms of influence. In this plot the dotted red lines are cook’s distance and the areas of interest for us are the ones outside dotted line on top right corner or bottom right corner. If any point falls in that region , we say that the observation has high leverage or potential for influencing our model is higher if we exclude that point. ts not always the case though that all outliers will have high leverage or vice versa. In this case observation #1 & #96 has high leverage and our choices are Justify the inclusion of #1 & #96 and keep the model as is, Include quadratic term as indicated by Residual vs fitted plot and remodel and Exclude observation #1 & #96 and remodel.
 
-![residualsvsbudget](https://user-images.githubusercontent.com/25557540/38493012-8f77ac04-3ba5-11e8-9af0-8d88366c5e99.png)
-
-* After Splitting dataset to find test R-squared for linear model we get efficiency of 75%
-
 #### Lasso Regression:
+
+* Ridge regression uses L2 regularisation to weight/penalise residuals when the parameters of a regression model are being learned. 
+* Ridge attempts to minimize residual sum of squares of predictors in a given model. However, ridge regression includes an additional ‘shrinkage’ term – the square of the coefficient estimate – which shrinks the estimate of the coefficients towards zero. The impact of this term is controlled by another term, lambda (determined seperately). 
+* Ridge Regression is a commonly used technique to address the problem of multi-collinearity. 
+* 
 
 **Result:**
 ![ridge regression](https://user-images.githubusercontent.com/25557540/38493214-3fddddb6-3ba6-11e8-827d-cead0be5d5be.png)
