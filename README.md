@@ -115,7 +115,7 @@ Given the information  about a movie such as release month, cast, budget, film r
 
 * <b>Residuals vs Leverage:</b> The Influence of an observation can be thought of in terms of how much the predicted scores would change  if the observation is excluded. Cook’s Distance is a pretty good measure of influence of an observation. The leverage of an observation is based on how much the observation’s value on the predictor variable differs from the mean of the predictor variable. The more the leverage of an observation , the greater potential that point has in terms of influence. In this plot the dotted red lines are cook’s distance and the areas of interest for us are the ones outside dotted line on top right corner or bottom right corner. If any point falls in that region , we say that the observation has high leverage or potential for influencing our model is higher if we exclude that point. ts not always the case though that all outliers will have high leverage or vice versa. In this case observation #1 & #96 has high leverage and our choices are Justify the inclusion of #1 & #96 and keep the model as is, Include quadratic term as indicated by Residual vs fitted plot and remodel and Exclude observation #1 & #96 and remodel.
 
-#### Lasso Regression:
+#### Ridge Regression:
 
 * Ridge regression uses L2 regularisation to weight/penalise residuals when the parameters of a regression model are being learned. 
 * Ridge attempts to minimize residual sum of squares of predictors in a given model. However, ridge regression includes an additional ‘shrinkage’ term – the square of the coefficient estimate – which shrinks the estimate of the coefficients towards zero. The impact of this term is controlled by another term, lambda (determined seperately). 
@@ -131,6 +131,12 @@ ridge_mod = glmnet(x_train, y_train, alpha=0, lambda = lambda)
 **Result:**
 ![ridge regression](https://user-images.githubusercontent.com/25557540/38493214-3fddddb6-3ba6-11e8-827d-cead0be5d5be.png)
 
+* Shows the effect of collinearity in the coefficients of an estimator
+* Ridge Regression is the estimator used in this example. Each color represents a different feature of the coefficient vector, and this is displayed as a function of the regularization parameter
+* The above graph also shows the usefulness of applying Ridge regression to highly ill-conditioned matrices. For such matrices, a slight change in the target variable can cause huge variances in the calculated coefficients. Therefore, it is useful to set a certain regularization (lambda) to reduce this variation (noise).
+* When lambda is very large, the regularization effect dominates the squared loss function and the coefficients tend to zero. * At the end of the path, as lambda tends toward zero and the solution tends towards the ordinary least squares, coefficients exhibit big oscillations. In practise it is necessary to tune lambda in such a way that a balance is maintained between both.
+
+
 ![cross validationrr](https://user-images.githubusercontent.com/25557540/38493242-52799564-3ba6-11e8-9ca9-8e6e39b5eb9f.png)
 * cv.glmnet() uses cross-validation to work out how well each model generalises, which we can visualise as:
 * The lowest point in the curve indicates the optimal lambda: the log value of lambda that best minimised the error in cross-validation. We can extract this values as
@@ -140,9 +146,9 @@ opt_lambda
 ```
 * The best lambda value is <b>0.01</b>
 
-#### Ridge Regression:
+#### Lasso Regression:
 
-* 
+
 **Result:**
 ![lasso regression](https://user-images.githubusercontent.com/25557540/38493218-43a9f13c-3ba6-11e8-8326-0cdbfefccf29.png)
 ![lasso regressionrr](https://user-images.githubusercontent.com/25557540/38493248-57a91f14-3ba6-11e8-9cf6-38cba3dc2fda.png)
