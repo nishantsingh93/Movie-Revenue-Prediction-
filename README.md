@@ -120,7 +120,12 @@ Given the information  about a movie such as release month, cast, budget, film r
 * Ridge regression uses L2 regularisation to weight/penalise residuals when the parameters of a regression model are being learned. 
 * Ridge attempts to minimize residual sum of squares of predictors in a given model. However, ridge regression includes an additional ‘shrinkage’ term – the square of the coefficient estimate – which shrinks the estimate of the coefficients towards zero. The impact of this term is controlled by another term, lambda (determined seperately). 
 * Ridge Regression is a commonly used technique to address the problem of multi-collinearity. 
-* 
+* The glmnet package provides the functionality for ridge regression via glmnet(), it requires a vector input and matrix of predictors.
+* Ridge regression involves tuning a hyperparameter, lambda. glmnet() will generate default values for you.
+* Ridge regression involves tuning a hyperparameter, lambda, glmnet() runs the model many times for different values of lambda. We can automatically find a value for lambda that is optimal by using cv.glmnet() as follows:
+```
+ridge_mod = glmnet(x_train, y_train, alpha=0, lambda = lambda)
+```
 
 **Result:**
 ![ridge regression](https://user-images.githubusercontent.com/25557540/38493214-3fddddb6-3ba6-11e8-827d-cead0be5d5be.png)
