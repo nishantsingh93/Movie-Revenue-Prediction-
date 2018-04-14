@@ -89,11 +89,15 @@ Given the information  about a movie such as release month, cast, budget, film r
 * But Scatterplot matrices are not so good for looking at discrete variables
 * In our dataset we can see that the variables have non linear correlation
 
+******************************************************************************************************************************
+
 ![correlation plot](https://user-images.githubusercontent.com/25557540/38493373-cff5fa64-3ba6-11e8-8d71-fbd051af52e8.png)
 
 * Correlogram is a graph of correlation matrix. It is very useful to highlight the most correlated variables in a dataset. 
 * In this plot, Correlation matrix is reordered according to the degree of association between variables. 
 * The correlation plot shows high correlation between <b>revenue</b> & <b>budget</b>, <b>vote_count</b> & <b>popularity</b> and <b>revenue</b> & <b>votecount</b>
+
+******************************************************************************************************************************
 
 #### Linear Regression:
 
@@ -117,6 +121,8 @@ Given the information  about a movie such as release month, cast, budget, film r
 <b>Scale Location:</b> This plot is similar to the residuals versus fitted values plot, but it uses the square root of the standardized residuals. Like the first plot, there should be no discernable pattern to the plot.
 
 <b>Residuals vs Leverage:</b> The Influence of an observation can be thought of in terms of how much the predicted scores would change  if the observation is excluded. Cook’s Distance is a pretty good measure of influence of an observation. The leverage of an observation is based on how much the observation’s value on the predictor variable differs from the mean of the predictor variable. The more the leverage of an observation , the greater potential that point has in terms of influence. In this plot the dotted red lines are cook’s distance and the areas of interest for us are the ones outside dotted line on top right corner or bottom right corner. If any point falls in that region , we say that the observation has high leverage or potential for influencing our model is higher if we exclude that point. ts not always the case though that all outliers will have high leverage or vice versa. In this case observation #1 & #96 has high leverage and our choices are Justify the inclusion of #1 & #96 and keep the model as is, Include quadratic term as indicated by Residual vs fitted plot and remodel and Exclude observation #1 & #96 and remodel.
+
+******************************************************************************************************************************
 
 #### Ridge Regression:
 
@@ -150,6 +156,8 @@ opt_lambda
 ```
 * The best lambda value is <b>0.01</b>
 
+******************************************************************************************************************************
+
 #### Lasso Regression:
 
 **Result:**
@@ -157,11 +165,13 @@ opt_lambda
 
 ![lasso regressionrr](https://user-images.githubusercontent.com/25557540/38493248-57a91f14-3ba6-11e8-9cf6-38cba3dc2fda.png)
 
-#### Regression Trees:
+#### Decision Trees:
 
 **Result:**
 ![rt](https://user-images.githubusercontent.com/25557540/38493273-732e9d72-3ba6-11e8-958a-14761ac09a5e.png)
 ![rt1](https://user-images.githubusercontent.com/25557540/38493431-094821f2-3ba7-11e8-8013-bdcd6bacf2ca.png)
+
+******************************************************************************************************************************
 
 #### Random Forest:
 
