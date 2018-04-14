@@ -35,6 +35,8 @@ This Project aims at predicting revenue of movies using supervised learning appr
 * Personality traits, views on life, & opinions (57 items)
 * Spending habits (7 items)
 * Demographics (10 items)
+
+
 **Dataset Cleaning:**
 
 ******************************************************************************************************************************
