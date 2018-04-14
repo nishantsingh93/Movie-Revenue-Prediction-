@@ -81,9 +81,28 @@ Given the information  about a movie such as release month, cast, budget, film r
 
 ### IV. Training Machine Learning Algorithms:
 
-#### Linear Regression:
 ![scatterplotmatrix](https://user-images.githubusercontent.com/25557540/38492900-35d069d4-3ba5-11e8-90ee-295020f6e292.png)
+
+* Scatterplot matrices are a great way to roughly determine if we have a linear correlation between multiple variables.
+* The closer the data points come when plotted to making a straight line, the higher the correlation between the two variables, or the stronger the relationship
+* The variables have a negative correlation in this dataset and don't seem to be a good data set for Linear regression 
+* But Scatterplot matrices are not so good for looking at discrete variables
+* In our dataset we can see that the variables have non linear correlation
+
 ![correlation plot](https://user-images.githubusercontent.com/25557540/38493373-cff5fa64-3ba6-11e8-8d71-fbd051af52e8.png)
+
+* Correlogram is a graph of correlation matrix. It is very useful to highlight the most correlated variables in a dataset. 
+* In this plot, Correlation matrix is reordered according to the degree of association between variables. 
+* The correlation plot shows high correlation between <b>revenue</b> & <b>budget</b>, <b>vote_count</b> & <b>popularity</b> and <b>revenue</b> & <b>votecount</b>
+
+#### Linear Regression:
+
+* Intially we run a full model on the full dataset to find correlation between the top predictors and the target variables
+* After running the full model we find that our top predictors are <b>budget</b>, <b>runtime </b>, <b>vote_count</b>, <b>genre_Crime</b>, <b> genre_Drama </b>, <b>genre_Animation</b>, <b>genre_Family</b> and <b>holiday_month</b>
+* The R square value for the model comes out to be 0.7893
+* Now we run the model with our top predictors after splitting the dataset into test, train with 75/25 split ratio and choosing the random sample for each set
+* The accuracy for this model is <b>0.7571309</b> 
+* We classify the above model as a better model than the previous linear model beacuse of dataset being split into test and train
 
 
 **Result:**
@@ -91,24 +110,51 @@ Given the information  about a movie such as release month, cast, budget, film r
 **Diagnostic plots:**
 
 ![diagnostic plots](https://user-images.githubusercontent.com/25557540/38492936-52257fe8-3ba5-11e8-902f-3aefbbcd2e51.png)
+<b>Residuals vs Fitted:</b>  This plot shows that the residuals have non-linear patterns. There is a non-linear relationship between predictor variables and an outcome variable and the pattern shows up in this plot if the model doesn’t capture the non-linear relationship.
 
-* This plot shows that the residuals have non-linear patterns. There is a non-linear relationship between predictor variables and an outcome variable and the pattern shows up in this plot if the model doesn’t capture the non-linear relationship.
+<b>Normal Q-Q:</b>A Q-Q plot compares the quantiles of a dataset and a set of theoretical quantiles from a probability distribution.Therefore it basically compares every observed value against a standard normal distribution with the same number of points. The graph is “skewed right,” meaning that most of the data is distributed on the left side with a long “tail” of data extending out to the right.
 
-![residualsvsbudget](https://user-images.githubusercontent.com/25557540/38493012-8f77ac04-3ba5-11e8-9af0-8d88366c5e99.png)
+<b>Scale Location:</b> This plot is similar to the residuals versus fitted values plot, but it uses the square root of the standardized residuals. Like the first plot, there should be no discernable pattern to the plot.
 
-* After Splitting dataset to find test R-squared for linear model we get efficiency of 75%
+<b>Residuals vs Leverage:</b> The Influence of an observation can be thought of in terms of how much the predicted scores would change  if the observation is excluded. Cook’s Distance is a pretty good measure of influence of an observation. The leverage of an observation is based on how much the observation’s value on the predictor variable differs from the mean of the predictor variable. The more the leverage of an observation , the greater potential that point has in terms of influence. In this plot the dotted red lines are cook’s distance and the areas of interest for us are the ones outside dotted line on top right corner or bottom right corner. If any point falls in that region , we say that the observation has high leverage or potential for influencing our model is higher if we exclude that point. ts not always the case though that all outliers will have high leverage or vice versa. In this case observation #1 & #96 has high leverage and our choices are Justify the inclusion of #1 & #96 and keep the model as is, Include quadratic term as indicated by Residual vs fitted plot and remodel and Exclude observation #1 & #96 and remodel.
+
+#### Ridge Regression:
+
+* Ridge regression uses L2 regularisation to weight/penalise residuals when the parameters of a regression model are being learned. 
+* Ridge attempts to minimize residual sum of squares of predictors in a given model. However, ridge regression includes an additional ‘shrinkage’ term – the square of the coefficient estimate – which shrinks the estimate of the coefficients towards zero. The impact of this term is controlled by another term, lambda (determined seperately). 
+* Ridge Regression is a commonly used technique to address the problem of multi-collinearity. 
+* The glmnet package provides the functionality for ridge regression via glmnet(), it requires a vector input and matrix of predictors.
+* Ridge regression involves tuning a hyperparameter, lambda. glmnet() will generate default values for you.
+* Ridge regression involves tuning a hyperparameter, lambda, glmnet() runs the model many times for different values of lambda. We can automatically find a value for lambda that is optimal by using cv.glmnet() as follows:
+```
+ridge_mod = glmnet(x_train, y_train, alpha=0, lambda = lambda)
+```
+**Result:**
+![ridge regression](https://user-images.githubusercontent.com/25557540/38493214-3fddddb6-3ba6-11e8-827d-cead0be5d5be.png)
+
+* Shows the effect of collinearity in the coefficients of an estimator
+* Ridge Regression is the estimator used in this example. Each color represents a different feature of the coefficient vector, and this is displayed as a function of the regularization parameter
+* The above graph also shows the usefulness of applying Ridge regression to highly ill-conditioned matrices. For such matrices, a slight change in the target variable can cause huge variances in the calculated coefficients. Therefore, it is useful to set a certain regularization (lambda) to reduce this variation (noise).
+* When lambda is very large, the regularization effect dominates the squared loss function and the coefficients tend to zero 
+* At the end of the path, as lambda tends toward zero and the solution tends towards the ordinary least squares, coefficients exhibit big oscillations. In practise it is necessary to tune lambda in such a way that a balance is maintained between both.
+
+![cross validationrr](https://user-images.githubusercontent.com/25557540/38493242-52799564-3ba6-11e8-9ca9-8e6e39b5eb9f.png)
+
+* cv.glmnet() uses cross-validation to work out how well each model generalises, which we can visualise as:
+* The lowest point in the curve indicates the optimal lambda: the log value of lambda that best minimised the error in cross-
+validation. We can extract this values as
+
+```
+opt_lambda <- cv.ridge.out$lambda.min
+opt_lambda
+```
+* The best lambda value is <b>0.01</b>
 
 #### Lasso Regression:
 
 **Result:**
-![ridge regression](https://user-images.githubusercontent.com/25557540/38493214-3fddddb6-3ba6-11e8-827d-cead0be5d5be.png)
-![cross validationrr](https://user-images.githubusercontent.com/25557540/38493242-52799564-3ba6-11e8-9ca9-8e6e39b5eb9f.png)
-
-
-#### Ridge Regression:
-
-**Result:**
 ![lasso regression](https://user-images.githubusercontent.com/25557540/38493218-43a9f13c-3ba6-11e8-8326-0cdbfefccf29.png)
+
 ![lasso regressionrr](https://user-images.githubusercontent.com/25557540/38493248-57a91f14-3ba6-11e8-9cf6-38cba3dc2fda.png)
 
 #### Regression Trees:
